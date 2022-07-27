@@ -106,6 +106,7 @@ function trackUsage({ event, scope, error }) {
   const properties = {
     error: typeof error == 'string' ? error : error && error.message,
     os: os.type(),
+    os_arch: os.arch(),
     os_platform: os.platform(),
     os_release: os.release(),
     node_version: process.version,
