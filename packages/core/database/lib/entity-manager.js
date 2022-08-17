@@ -832,8 +832,8 @@ const createEntityManager = (db) => {
     // -> virtuals
     // -> private
 
-    createQueryBuilder(uid) {
-      return createQueryBuilder(uid, db);
+    createQueryBuilder(uid, alias) {
+      return createQueryBuilder(uid, db, { alias });
     },
 
     getRepository(uid) {

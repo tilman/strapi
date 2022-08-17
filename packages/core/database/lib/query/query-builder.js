@@ -4,11 +4,15 @@ const _ = require('lodash/fp');
 
 const helpers = require('./helpers');
 
-const createQueryBuilder = (uid, db) => {
+const createQueryBuilder = (uid, db, { alias } = {}) => {
   const meta = db.metadata.get(uid);
   const { tableName } = meta;
 
+  let counter = 0;
+  const getAlias = () => `t${counter++}`;
+
   const state = {
+    alias: alias || getAlias(),
     type: 'select',
     select: [],
     count: null,
@@ -26,11 +30,10 @@ const createQueryBuilder = (uid, db) => {
     groupBy: [],
   };
 
-  let counter = 0;
-  const getAlias = () => `t${counter++}`;
-
   return {
-    alias: getAlias(),
+    get alias() {
+      return state.alias;
+    },
     getAlias,
     state,
 
@@ -188,8 +191,14 @@ const createQueryBuilder = (uid, db) => {
       return this;
     },
 
-    join(join) {
-      state.joins.push(join);
+    join(target, alias, on, type = 'leftJoin') {
+      state.joins.push({
+        target,
+        alias: alias || this.getAlias(),
+        on,
+        type,
+      });
+
       return this;
     },
 
@@ -231,7 +240,8 @@ const createQueryBuilder = (uid, db) => {
     },
 
     processState() {
-      state.orderBy = helpers.processOrderBy(state.orderBy, { qb: this, uid, db });
+      const ctx = { qb: this, uid, db };
+      state.orderBy = helpers.processOrderBy(state.orderBy, ctx);
 
       if (!_.isNil(state.filters)) {
         if (_.isFunction(state.filters)) {
@@ -245,8 +255,9 @@ const createQueryBuilder = (uid, db) => {
         }
       }
 
-      state.where = helpers.processWhere(state.where, { qb: this, uid, db });
-      state.populate = helpers.processPopulate(state.populate, { qb: this, uid, db });
+      state.where = helpers.processWhere(state.where, ctx);
+      state.joins = helpers.processJoins(state.joins, ctx);
+      state.populate = helpers.processPopulate(state.populate, ctx);
       state.data = helpers.toRow(meta, state.data);
 
       this.processSelect();

@@ -62,8 +62,8 @@ class Database {
     return this.connection.transaction();
   }
 
-  queryBuilder(uid) {
-    return this.entityManager.createQueryBuilder(uid);
+  queryBuilder(uid, alias) {
+    return this.entityManager.createQueryBuilder(uid, alias);
   }
 
   async destroy() {

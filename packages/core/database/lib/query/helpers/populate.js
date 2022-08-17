@@ -8,7 +8,9 @@ const { fromRow } = require('./transform');
 const getRootLevelPopulate = (meta) => {
   const populate = {};
 
-  for (const attributeName in meta.attributes) {
+  const keys = Object.keys(meta.attributes);
+  for (let i = 0; i < keys.length; i += 1) {
+    const attributeName = keys[i];
     const attribute = meta.attributes[attributeName];
     if (attribute.type === 'relation') {
       populate[attributeName] = true;
@@ -72,7 +74,10 @@ const processPopulate = (populate, ctx) => {
   }
 
   const finalPopulate = {};
-  for (const key in populateMap) {
+  const populateKeys = Object.keys(populateMap);
+  for (let i = 0; i < populateKeys.length; i += 1) {
+    const key = populateKeys[i];
+
     const attribute = meta.attributes[key];
 
     if (!attribute) {
@@ -119,7 +124,9 @@ const applyPopulate = async (results, populate, ctx) => {
     return results;
   }
 
-  for (const key in populate) {
+  const populateKeys = Object.keys(populate);
+  for (let i = 0; i < populateKeys.length; i += 1) {
+    const key = populateKeys[i];
     const attribute = meta.attributes[key];
     const targetMeta = db.metadata.get(attribute.target);
 
@@ -540,7 +547,9 @@ const applyPopulate = async (results, populate, ctx) => {
       }, {});
 
       const map = {};
-      for (const type in idsByType) {
+      const types = Object.keys(idsByType);
+      for (let i = 0; i < types.length; i += 1) {
+        const type = types[i];
         const ids = idsByType[type];
 
         // type was removed but still in morph relation
@@ -604,7 +613,9 @@ const applyPopulate = async (results, populate, ctx) => {
       }, {});
 
       const map = {};
-      for (const type in idsByType) {
+      const types = Object.keys(idsByType);
+      for (let i = 0; i < types.length; i += 1) {
+        const type = types[i];
         const ids = idsByType[type];
 
         // type was removed but still in morph relation

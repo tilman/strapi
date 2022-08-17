@@ -4,7 +4,6 @@ const _ = require('lodash/fp');
 
 const types = require('../../types');
 const { createField } = require('../../fields');
-const { createJoin } = require('./join');
 const { toColumnName } = require('./transform');
 
 const GROUP_OPERATORS = ['$and', '$or'];
@@ -47,6 +46,15 @@ const ARRAY_OPERATORS = ['$in', '$notIn', '$between'];
 
 const isOperator = (key) => OPERATORS.includes(key);
 
+const fieldLowerFn = (qb) => {
+  // Postgres requires string to be passed
+  if (qb.client.config.client === 'postgres') {
+    return 'LOWER(CAST(?? AS VARCHAR))';
+  }
+
+  return 'LOWER(??)';
+};
+
 const castValue = (value, attribute) => {
   if (!attribute) {
     return value;
@@ -76,7 +84,9 @@ const processAttributeWhere = (attribute, where, operator = '$eq') => {
 
   const filters = {};
 
-  for (const key in where) {
+  const whereKeys = Object.keys(where);
+  for (let i = 0; i < whereKeys.length; i += 1) {
+    const key = whereKeys[i];
     const value = where[key];
 
     if (!isOperator(key)) {
@@ -119,7 +129,9 @@ const processWhere = (where, ctx) => {
   const filters = {};
 
   // for each key in where
-  for (const key in where) {
+  const whereKeys = Object.keys(where);
+  for (let i = 0; i < whereKeys.length; i += 1) {
+    const key = whereKeys[0];
     const value = where[key];
 
     // if operator $and $or then loop over them
@@ -147,23 +159,26 @@ const processWhere = (where, ctx) => {
     }
 
     if (types.isRelation(attribute.type)) {
+      const joinAlias = qb.getAlias();
+      qb.join(key, joinAlias);
+
       // attribute
-      const subAlias = createJoin(ctx, {
-        alias: alias || qb.alias,
-        uid,
-        attributeName: key,
-        attribute,
-      });
+      // const subAlias = createJoin(ctx, {
+      //   alias: alias || qb.alias,
+      //   uid,
+      //   attributeName: key,
+      //   attribute,
+      // });
 
       let nestedWhere = processNested(value, {
         db,
         qb,
-        alias: subAlias,
+        alias: joinAlias,
         uid: attribute.target,
       });
 
       if (!_.isPlainObject(nestedWhere) || isOperator(_.keys(nestedWhere)[0])) {
-        nestedWhere = { [qb.aliasColumn('id', subAlias)]: nestedWhere };
+        nestedWhere = { [qb.aliasColumn('id', joinAlias)]: nestedWhere };
       }
 
       // TODO: use a better merge logic (push to $and when collisions)
@@ -362,15 +377,6 @@ const applyWhere = (qb, where) => {
 
     applyWhereToColumn(qb, key, value);
   });
-};
-
-const fieldLowerFn = (qb) => {
-  // Postgres requires string to be passed
-  if (qb.client.config.client === 'postgres') {
-    return 'LOWER(CAST(?? AS VARCHAR))';
-  }
-
-  return 'LOWER(??)';
 };
 
 module.exports = {

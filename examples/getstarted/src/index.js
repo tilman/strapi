@@ -16,7 +16,15 @@ module.exports = {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  bootstrap({ strapi }) {},
+  async bootstrap({ strapi }) {
+    const r = strapi.db
+      .queryBuilder('api::address.address', 'ad')
+      .select('ad.*')
+      .join('categories', 'c')
+      .getKnexQuery();
+
+    console.log(r.toString());
+  },
 
   /**
    * An asynchronous destroy function that runs before

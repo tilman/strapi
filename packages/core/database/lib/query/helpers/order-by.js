@@ -3,7 +3,6 @@
 const _ = require('lodash/fp');
 
 const types = require('../../types');
-const { createJoin } = require('./join');
 const { toColumnName } = require('./transform');
 
 const processOrderBy = (orderBy, ctx) => {
@@ -43,17 +42,20 @@ const processOrderBy = (orderBy, ctx) => {
       }
 
       if (attribute.type === 'relation') {
-        const subAlias = createJoin(ctx, {
-          alias: alias || qb.alias,
-          uid,
-          attributeName: key,
-          attribute,
-        });
+        const joinAlias = qb.getAlias();
+        qb.join(key, joinAlias);
+
+        // const subAlias = createJoin(ctx, {
+        //   alias: alias || qb.alias,
+        //   uid,
+        //   attributeName: key,
+        //   attribute,
+        // });
 
         return processOrderBy(value, {
           db,
           qb,
-          alias: subAlias,
+          alias: joinAlias,
           uid: attribute.target,
         });
       }
